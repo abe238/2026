@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { api } from '../lib/api';
 
 export interface ExtractedWin {
   title: string;
@@ -27,95 +28,6 @@ interface UseVoiceCaptureReturn extends VoiceCaptureState {
   confirmWins: (wins: ExtractedWin[]) => Promise<void>;
 }
 
-function mockExtractWins(transcript: string): ExtractedWin[] {
-  const lower = transcript.toLowerCase();
-  const wins: ExtractedWin[] = [];
-
-  if (lower.includes('peloton') || lower.includes('workout') || lower.includes('gym') || lower.includes('run') || lower.includes('exercise')) {
-    wins.push({
-      title: transcript,
-      goalAreaId: 'physical_health',
-      goalAreaName: 'Physical Health',
-      confidence: 0.92,
-    });
-  } else if (lower.includes('meditat') || lower.includes('journal') || lower.includes('therapy') || lower.includes('mindful')) {
-    wins.push({
-      title: transcript,
-      goalAreaId: 'mental_health',
-      goalAreaName: 'Mental Health',
-      confidence: 0.88,
-    });
-  } else if (lower.includes('ian') || lower.includes('son') || lower.includes('kid')) {
-    wins.push({
-      title: transcript,
-      goalAreaId: 'family_ian',
-      goalAreaName: 'Family - Ian',
-      confidence: 0.85,
-    });
-  } else if (lower.includes('wife') || lower.includes('date') || lower.includes('dinner together')) {
-    wins.push({
-      title: transcript,
-      goalAreaId: 'family_wife',
-      goalAreaName: 'Family - Wife',
-      confidence: 0.87,
-    });
-  } else if (lower.includes('1:1') || lower.includes('one on one') || lower.includes('team') || lower.includes('mentor')) {
-    wins.push({
-      title: transcript,
-      goalAreaId: 'work_leadership',
-      goalAreaName: 'Work - Leadership',
-      confidence: 0.84,
-    });
-  } else if (lower.includes('strateg') || lower.includes('okr') || lower.includes('vision') || lower.includes('presentation')) {
-    wins.push({
-      title: transcript,
-      goalAreaId: 'work_strategic',
-      goalAreaName: 'Work - Strategic',
-      confidence: 0.86,
-    });
-  } else if (lower.includes('newsletter') || lower.includes('wrote') || lower.includes('article') || lower.includes('content')) {
-    wins.push({
-      title: transcript,
-      goalAreaId: 'content_newsletter',
-      goalAreaName: 'Content/Newsletter',
-      confidence: 0.83,
-    });
-  } else {
-    wins.push({
-      title: transcript,
-      goalAreaId: 'work_strategic',
-      goalAreaName: 'Work - Strategic',
-      confidence: 0.6,
-    });
-  }
-
-  return wins;
-}
-
-async function simulateTranscription(
-  onInterim: (text: string) => void,
-  onFinal: (text: string) => void,
-  signal: AbortSignal
-): Promise<void> {
-  const mockPhrases = [
-    'Just did',
-    'Just did a 20',
-    'Just did a 20 minute',
-    'Just did a 20 minute Peloton ride',
-  ];
-
-  for (let i = 0; i < mockPhrases.length; i++) {
-    if (signal.aborted) return;
-    await new Promise((r) => setTimeout(r, 400 + Math.random() * 200));
-    if (signal.aborted) return;
-    onInterim(mockPhrases[i]);
-  }
-
-  if (!signal.aborted) {
-    onFinal(mockPhrases[mockPhrases.length - 1]);
-  }
-}
-
 export function useVoiceCapture(): UseVoiceCaptureReturn {
   const [state, setState] = useState<VoiceCaptureState>({
     isRecording: false,
@@ -131,16 +43,12 @@ export function useVoiceCapture(): UseVoiceCaptureReturn {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
   const durationIntervalRef = useRef<number | null>(null);
 
   useEffect(() => {
     return () => {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
-      }
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
       }
       if (durationIntervalRef.current) {
         clearInterval(durationIntervalRef.current);
@@ -155,9 +63,8 @@ export function useVoiceCapture(): UseVoiceCaptureReturn {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4',
-      });
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
 
       audioChunksRef.current = [];
 
@@ -174,19 +81,13 @@ export function useVoiceCapture(): UseVoiceCaptureReturn {
       mediaRecorderRef.current = mediaRecorder;
       mediaRecorder.start(100);
 
-      abortControllerRef.current = new AbortController();
-
       setState((prev) => ({ ...prev, isRecording: true }));
 
       durationIntervalRef.current = window.setInterval(() => {
         setState((prev) => ({ ...prev, duration: prev.duration + 1 }));
       }, 1000);
 
-      simulateTranscription(
-        (interim) => setState((prev) => ({ ...prev, interimTranscript: interim })),
-        (final) => setState((prev) => ({ ...prev, transcript: final, interimTranscript: '' })),
-        abortControllerRef.current.signal
-      );
+      setState((prev) => ({ ...prev, interimTranscript: 'Recording...' }));
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Microphone access denied';
       setState((prev) => ({ ...prev, error: message }));
@@ -199,41 +100,36 @@ export function useVoiceCapture(): UseVoiceCaptureReturn {
       durationIntervalRef.current = null;
     }
 
+    setState((prev) => ({ ...prev, isRecording: false, isPaused: false, isProcessing: true, interimTranscript: '' }));
+
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
-    }
+      mediaRecorderRef.current.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
 
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach((track) => track.stop());
+          streamRef.current = null;
+        }
 
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
+        try {
+          const result = await api.voice.process(audioBlob);
 
-    setState((prev) => {
-      const finalTranscript = prev.transcript || prev.interimTranscript;
-      return {
-        ...prev,
-        isRecording: false,
-        isPaused: false,
-        isProcessing: true,
-        transcript: finalTranscript,
-        interimTranscript: '',
+          setState((prev) => ({
+            ...prev,
+            isProcessing: false,
+            transcript: result.transcript,
+            extractedWins: result.wins,
+          }));
+        } catch (err) {
+          const errorMessage = err instanceof Error ? err.message : 'Processing failed';
+          setState((prev) => ({ ...prev, isProcessing: false, error: errorMessage }));
+        }
       };
-    });
 
-    setTimeout(() => {
-      setState((prev) => {
-        const wins = mockExtractWins(prev.transcript);
-        return {
-          ...prev,
-          isProcessing: false,
-          extractedWins: wins,
-        };
-      });
-    }, 800);
+      mediaRecorderRef.current.stop();
+    } else {
+      setState((prev) => ({ ...prev, isProcessing: false }));
+    }
   }, []);
 
   const pauseRecording = useCallback(() => {
@@ -254,9 +150,6 @@ export function useVoiceCapture(): UseVoiceCaptureReturn {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
-    }
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
     }
     if (durationIntervalRef.current) {
       clearInterval(durationIntervalRef.current);

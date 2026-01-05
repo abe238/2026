@@ -6,6 +6,7 @@ import path from 'path';
 import winsRouter from './routes/wins';
 import goalAreasRouter from './routes/goal-areas';
 import momentumRouter from './routes/momentum';
+import voiceRouter from './routes/voice';
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/wins', winsRouter);
 app.use('/api/goal-areas', goalAreasRouter);
 app.use('/api/momentum', momentumRouter);
+app.use('/api/voice', voiceRouter);
 
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../../client/dist')));

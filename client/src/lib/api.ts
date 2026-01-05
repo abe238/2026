@@ -26,6 +26,16 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return json.data as T;
 }
 
+interface VoiceProcessResult {
+  transcript: string;
+  wins: Array<{
+    title: string;
+    goalAreaId: string;
+    goalAreaName: string;
+    confidence: number;
+  }>;
+}
+
 export const api = {
   wins: {
     create: (data: any) => request('/api/wins', { method: 'POST', body: JSON.stringify(data) }),
@@ -38,5 +48,20 @@ export const api = {
   },
   momentum: {
     get: () => request('/api/momentum'),
+  },
+  voice: {
+    process: async (audioBlob: Blob): Promise<VoiceProcessResult> => {
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'recording.webm');
+
+      const res = await fetch(`${API_URL}/api/voice/process`, {
+        method: 'POST',
+        headers: { 'x-user-id': getUserId() },
+        body: formData,
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || 'Voice processing failed');
+      return json.data;
+    },
   },
 };

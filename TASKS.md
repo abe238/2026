@@ -48,16 +48,16 @@ A wins-focused goal tracking system for neurodivergent users. Track small wins a
 
 ## In Progress
 
-### Voice Integration (Tasks 31-40)
-- [ ] **LiveKit/Deepgram Integration** - Connect real speech-to-text
-  - Current: Mock transcription with simulated delay
-  - Target: LiveKit WebRTC + Deepgram STT
-  - Config ready in docker-compose (LIVEKIT_*, DEEPGRAM_API_KEY)
+### Voice Integration (Tasks 31-40) ✅
+- [x] **Deepgram Integration** - Real speech-to-text via server API
+  - Server route: POST /api/voice/process
+  - Uses Deepgram Nova-2 model
+  - Client sends audio blob, server returns transcript
 
-- [ ] **Claude API for Win Extraction** - Parse transcripts into wins
-  - Current: Manual win entry only
-  - Target: "I went for a run this morning" → Physical Health win
-  - Config ready (ANTHROPIC_API_KEY)
+- [x] **Claude API for Win Extraction** - Parse transcripts into wins
+  - Uses Claude claude-sonnet-4-20250514 for intelligent extraction
+  - Fallback keyword matching when Claude unavailable
+  - Returns structured wins with confidence scores
 
 ---
 
