@@ -10,7 +10,7 @@ COPY server/package*.json ./server/
 COPY shared/package*.json ./shared/
 
 # Install dependencies
-RUN npm ci
+RUN npm install
 
 # Copy source
 COPY . .
@@ -36,7 +36,7 @@ COPY --from=builder /app/shared/package*.json ./shared/
 
 # Install production dependencies only
 WORKDIR /app/server
-RUN npm ci --only=production
+RUN npm install --omit=dev --ignore-scripts
 
 # Security: Switch to non-root user
 USER appuser
