@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { MomentumCard } from '../components/MomentumCard';
 import { GoalAreaRow } from '../components/GoalAreaRow';
 import { WinCard } from '../components/WinCard';
 import { useMomentum } from '../hooks/useMomentum';
-import { useWeeklyWins } from '../hooks/useWins';
-import { motion } from 'framer-motion';
+import { useWeeklyWins, useCreateWin } from '../hooks/useWins';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, Check, Loader2 } from 'lucide-react';
 
 interface MomentumLevel {
   label: string;
@@ -50,9 +52,29 @@ const GOAL_AREA_META: Record<string, { emoji: string; color: string }> = {
 export function CommandCenter() {
   const { data: momentum, isLoading: momentumLoading } = useMomentum() as { data: MomentumData | undefined; isLoading: boolean };
   const { data: weeklyWins } = useWeeklyWins() as { data: Win[] | undefined };
+  const createWin = useCreateWin();
+
+  const [quickWinModal, setQuickWinModal] = useState<{ open: boolean; goalAreaId: string; goalAreaName: string } | null>(null);
+  const [winTitle, setWinTitle] = useState('');
 
   const handleLogWin = (goalAreaId: string) => {
-    console.log('Log win for:', goalAreaId);
+    const area = momentum?.byGoalArea.find(a => a.goalAreaId === goalAreaId);
+    setQuickWinModal({ open: true, goalAreaId, goalAreaName: area?.displayName || goalAreaId });
+    setWinTitle('');
+  };
+
+  const handleSubmitWin = async () => {
+    if (!quickWinModal || !winTitle.trim()) return;
+
+    await createWin.mutateAsync({
+      goalAreaId: quickWinModal.goalAreaId,
+      title: winTitle.trim(),
+      occurredAt: new Date().toISOString(),
+      captureMethod: 'tap',
+    });
+
+    setQuickWinModal(null);
+    setWinTitle('');
   };
 
   if (momentumLoading) {
@@ -137,6 +159,74 @@ export function CommandCenter() {
           </p>
         </motion.div>
       )}
+
+      <AnimatePresence>
+        {quickWinModal && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 z-40"
+              onClick={() => setQuickWinModal(null)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-50 bg-[var(--color-surface-primary)] rounded-2xl p-6 max-w-md mx-auto shadow-xl"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">
+                  Log Win: {quickWinModal.goalAreaName}
+                </h3>
+                <button
+                  onClick={() => setQuickWinModal(null)}
+                  className="p-2 hover:bg-gray-100 rounded-full"
+                >
+                  <X size={20} className="text-gray-400" />
+                </button>
+              </div>
+
+              <input
+                type="text"
+                value={winTitle}
+                onChange={(e) => setWinTitle(e.target.value)}
+                placeholder="What did you accomplish?"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[var(--color-momentum-steady)] focus:outline-none text-[var(--color-text-primary)]"
+                autoFocus
+                onKeyDown={(e) => e.key === 'Enter' && handleSubmitWin()}
+              />
+
+              <div className="flex gap-3 mt-4">
+                <button
+                  onClick={() => setQuickWinModal(null)}
+                  className="flex-1 py-3 px-4 rounded-xl border border-gray-200 text-gray-600 font-medium hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSubmitWin}
+                  disabled={!winTitle.trim() || createWin.isPending}
+                  className="flex-1 py-3 px-4 rounded-xl bg-[var(--color-momentum-steady)] text-white font-medium hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {createWin.isPending ? (
+                    <>
+                      <Loader2 size={18} className="animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Check size={18} />
+                      Save Win
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
