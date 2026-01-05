@@ -6,12 +6,21 @@ interface ApiResponse<T> {
   error?: string;
 }
 
+function getUserId(): string {
+  let userId = localStorage.getItem('userId');
+  if (!userId) {
+    userId = 'user_' + crypto.randomUUID();
+    localStorage.setItem('userId', userId);
+  }
+  return userId;
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      'x-user-id': localStorage.getItem('userId') || '',
+      'x-user-id': getUserId(),
       ...options?.headers,
     },
   });
