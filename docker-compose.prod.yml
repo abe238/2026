@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  momentum2026:
+    image: ghcr.io/abe238/2026:latest
+    container_name: momentum2026
+    restart: always
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
+      LIVEKIT_URL: ${LIVEKIT_URL}
+      DEEPGRAM_API_KEY: ${DEEPGRAM_API_KEY}
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.momentum2026.rule=Host(`2026goals.srv944870.hstgr.cloud`)
+      - traefik.http.routers.momentum2026.tls=true
+      - traefik.http.routers.momentum2026.entrypoints=web,websecure
+      - traefik.http.routers.momentum2026.tls.certresolver=mytlschallenge
+      - traefik.http.services.momentum2026.loadbalancer.server.port=3001
+    expose:
+      - "3001"
+    networks:
+      - default
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+
+networks:
+  default:
+    external: true
+    name: coolify

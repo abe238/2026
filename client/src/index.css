@@ -1,0 +1,111 @@
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  /* Dyslexia-friendly typography from PRD */
+  --font-family-sans: 'Lexend', system-ui, sans-serif;
+
+  /* Momentum 2026 Color System - Anti-guilt design */
+  --color-momentum-rising: #10B981;      /* emerald-500 */
+  --color-momentum-steady: #6366F1;       /* indigo-500 */
+  --color-momentum-building: #F59E0B;     /* amber-500 - NOT red! */
+  --color-momentum-starting: #8B5CF6;     /* violet-500 */
+
+  /* Goal Area Colors from PRD */
+  --color-goal-physical: #10B981;         /* emerald - Physical Health */
+  --color-goal-mental: #8B5CF6;           /* violet - Mental Health */
+  --color-goal-family-ian: #F59E0B;       /* amber - Ian time */
+  --color-goal-family-wife: #EC4899;      /* pink - Wife time */
+  --color-goal-work-strategic: #3B82F6;   /* blue - Strategic work */
+  --color-goal-work-leadership: #6366F1;  /* indigo - Leadership */
+  --color-goal-newsletter: #F97316;       /* orange - Newsletter */
+
+  /* Surface colors for cards */
+  --color-surface-primary: #FFFFFF;
+  --color-surface-secondary: #F9FAFB;
+  --color-surface-elevated: #FFFFFF;
+
+  /* Text colors - high contrast for accessibility */
+  --color-text-primary: #111827;
+  --color-text-secondary: #6B7280;
+  --color-text-muted: #9CA3AF;
+
+  /* Spacing - generous for touch targets */
+  --spacing-safe: 44px; /* minimum touch target */
+
+  /* Border radius - friendly, rounded */
+  --radius-card: 16px;
+  --radius-button: 12px;
+  --radius-input: 8px;
+}
+
+/* CSS custom properties for var() usage */
+:root {
+  --font-family-sans: 'Lexend', system-ui, sans-serif;
+  --color-momentum-rising: #10B981;
+  --color-momentum-steady: #6366F1;
+  --color-momentum-building: #F59E0B;
+  --color-momentum-starting: #8B5CF6;
+  --color-goal-physical: #10B981;
+  --color-goal-mental: #8B5CF6;
+  --color-goal-family-ian: #F59E0B;
+  --color-goal-family-wife: #EC4899;
+  --color-goal-work-strategic: #3B82F6;
+  --color-goal-work-leadership: #6366F1;
+  --color-goal-newsletter: #F97316;
+  --color-surface-primary: #FFFFFF;
+  --color-surface-secondary: #F9FAFB;
+  --color-surface-elevated: #FFFFFF;
+  --color-text-primary: #111827;
+  --color-text-secondary: #6B7280;
+  --color-text-muted: #9CA3AF;
+  --spacing-safe: 44px;
+  --radius-card: 16px;
+  --radius-button: 12px;
+  --radius-input: 8px;
+}
+
+/* Base styles - dyslexia-friendly defaults */
+html {
+  font-size: 18px; /* PRD: minimum 16-18px */
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-family-sans);
+  background-color: var(--color-surface-secondary);
+  color: var(--color-text-primary);
+  margin: 0;
+  min-height: 100vh;
+}
+
+/* Anti-guilt: Never use red for "behind" states */
+/* Using amber/warm colors for "needs attention" instead */
+
+/* Focus states for accessibility */
+*:focus-visible {
+  outline: 3px solid var(--color-momentum-steady);
+  outline-offset: 2px;
+}
+
+/* Touch-friendly button defaults */
+button,
+[role="button"],
+a {
+  min-height: var(--spacing-safe);
+  min-width: var(--spacing-safe);
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-surface-primary: #1F2937;
+    --color-surface-secondary: #111827;
+    --color-surface-elevated: #374151;
+    --color-text-primary: #F9FAFB;
+    --color-text-secondary: #D1D5DB;
+    --color-text-muted: #9CA3AF;
+  }
+}
