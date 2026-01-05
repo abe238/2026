@@ -18,8 +18,8 @@ services:
       - traefik.enable=true
       - traefik.http.routers.momentum2026.rule=Host(`2026goals.srv944870.hstgr.cloud`)
       - traefik.http.routers.momentum2026.tls=true
-      - traefik.http.routers.momentum2026.entrypoints=web,websecure
-      - traefik.http.routers.momentum2026.tls.certresolver=mytlschallenge
+      - traefik.http.routers.momentum2026.entrypoints=http,https
+      - traefik.http.routers.momentum2026.tls.certresolver=letsencrypt
       - traefik.http.services.momentum2026.loadbalancer.server.port=3001
     expose:
       - "3001"
