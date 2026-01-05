@@ -5,17 +5,18 @@ import { VoiceCapture } from './VoiceCapture';
 
 interface AppShellProps {
   children: ReactNode;
+  currentRoute?: string;
   onWinCreated?: () => void;
 }
 
 const navItems = [
-  { icon: Home, label: 'Today', href: '/' },
-  { icon: Target, label: 'Goals', href: '/goals' },
-  { icon: Award, label: 'Vault', href: '/vault' },
-  { icon: Settings, label: 'Settings', href: '/settings' },
+  { icon: Home, label: 'Today', href: '#/' },
+  { icon: Target, label: 'Goals', href: '#/goals' },
+  { icon: Award, label: 'Vault', href: '#/vault' },
+  { icon: Settings, label: 'Settings', href: '#/settings' },
 ];
 
-export function AppShell({ children, onWinCreated }: AppShellProps) {
+export function AppShell({ children, currentRoute = '/', onWinCreated }: AppShellProps) {
   const [isVoiceCaptureOpen, setIsVoiceCaptureOpen] = useState(false);
 
   const handleOpenVoiceCapture = () => {
@@ -30,20 +31,28 @@ export function AppShell({ children, onWinCreated }: AppShellProps) {
     onWinCreated?.();
   };
 
+  const isActive = (href: string) => {
+    const path = href.slice(1);
+    return path === currentRoute;
+  };
+
   return (
     <div className="min-h-screen bg-[var(--color-surface-secondary)]">
       <main className="pb-24 px-4 pt-6 max-w-lg mx-auto">
         {children}
       </main>
 
-      {/* Bottom navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-[var(--color-surface-primary)] border-t border-gray-200 px-6 py-3">
         <div className="max-w-lg mx-auto flex justify-around items-center">
           {navItems.map(({ icon: Icon, label, href }) => (
             <a
               key={href}
               href={href}
-              className="flex flex-col items-center gap-1 text-[var(--color-text-secondary)] hover:text-[var(--color-momentum-steady)] transition-colors"
+              className={`flex flex-col items-center gap-1 transition-colors ${
+                isActive(href)
+                  ? 'text-[var(--color-momentum-steady)]'
+                  : 'text-[var(--color-text-secondary)] hover:text-[var(--color-momentum-steady)]'
+              }`}
             >
               <Icon size={24} />
               <span className="text-xs">{label}</span>
@@ -52,7 +61,6 @@ export function AppShell({ children, onWinCreated }: AppShellProps) {
         </div>
       </nav>
 
-      {/* Floating voice button */}
       <motion.button
         onClick={handleOpenVoiceCapture}
         whileHover={{ scale: 1.05 }}
@@ -63,7 +71,6 @@ export function AppShell({ children, onWinCreated }: AppShellProps) {
         <Mic size={28} />
       </motion.button>
 
-      {/* Voice capture modal */}
       <VoiceCapture
         isOpen={isVoiceCaptureOpen}
         onClose={handleCloseVoiceCapture}
