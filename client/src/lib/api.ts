@@ -7,12 +7,9 @@ interface ApiResponse<T> {
 }
 
 function getUserId(): string {
-  let userId = localStorage.getItem('userId');
-  if (!userId) {
-    userId = 'user_' + crypto.randomUUID();
-    localStorage.setItem('userId', userId);
-  }
-  return userId;
+  // MVP: Use fixed user ID to match seeded database
+  // TODO: Implement proper auth later
+  return '00000000-0000-0000-0000-000000000001';
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
